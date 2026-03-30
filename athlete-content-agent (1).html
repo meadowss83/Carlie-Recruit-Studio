@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Athlete Content Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f; --surface: #111118; --surface2: #18181f;
+    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.14);
+    --accent: #ff5c35; --accent2: #ff8c6b; --gold: #f5c842;
+    --text: #f0eee8; --muted: #7a7880; --green: #4ade80;
+    --ig: #e1306c; --tt: #69c9d0; --tw: #1d9bf0; --hudl: #ff6600;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; font-size: 15px; min-height: 100vh; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(255,92,53,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,92,53,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+  .app { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 0 20px 60px; }
+
+  header { padding: 36px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+  .header-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .logo-mark { display: inline-block; background: var(--accent); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; margin-bottom: 10px; }
+  h1 { font-family: 'Barlow Condensed', sans-serif; font-size: 42px; font-weight: 800; line-height: 1; text-transform: uppercase; letter-spacing: -1px; }
+  h1 span { color: var(--accent); }
+  .header-sub { font-size: 14px; color: var(--muted); margin-top: 6px; font-weight: 300; }
+  .profile-chip { background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; padding: 10px 16px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .profile-chip strong { color: var(--text); display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 28px; background: var(--surface); border-radius: 8px; padding: 4px; }
+  .tab { flex: 1; padding: 9px 6px; border: none; background: none; color: var(--muted); cursor: pointer; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: 0.5px; text-transform: uppercase; transition: all 0.18s; }
+  .tab:hover { color: var(--text); background: var(--border); }
+  .tab.active { background: var(--accent); color: #fff; }
+  .panel { display: none; } .panel.active { display: block; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+  .form-full { margin-bottom: 16px; }
+  label { display: block; font-size: 11px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  input[type=text], textarea, select { width: 100%; background: var(--surface); border: 1px solid var(--border2); border-radius: 6px; color: var(--text); font-family: 'Barlow', sans-serif; font-size: 14px; padding: 10px 14px; outline: none; transition: border-color 0.15s; }
+  input[type=text]:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+  select option { background: #1a1a24; }
+
+  .platform-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .plat-btn { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 20px; border: 1.5px solid var(--border2); background: var(--surface); cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); transition: all 0.15s; user-select: none; }
+  .plat-btn input { display: none; }
+  .plat-btn.checked-ig { border-color: var(--ig); color: var(--ig); background: rgba(225,48,108,0.08); }
+  .plat-btn.checked-tt { border-color: var(--tt); color: var(--tt); background: rgba(105,201,208,0.08); }
+  .plat-btn.checked-tw { border-color: var(--tw); color: var(--tw); background: rgba(29,155,240,0.08); }
+  .plat-btn.checked-hudl { border-color: var(--hudl); color: var(--hudl); background: rgba(255,102,0,0.08); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-ig { background: var(--ig); } .dot-tt { background: var(--tt); } .dot-tw { background: var(--tw); } .dot-hudl { background: var(--hudl); }
+
+  .tone-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tone-btn { padding: 6px 13px; border-radius: 20px; border: 1.5px solid var(--border2); background: var(--surface); cursor: pointer; font-size: 12px; font-weight: 500; color: var(--muted); transition: all 0.15s; }
+  .tone-btn.selected { border-color: var(--gold); color: var(--gold); background: rgba(245,200,66,0.08); }
+
+  .btn-generate { width: 100%; padding: 14px; background: var(--accent); border: none; border-radius: 8px; color: #fff; cursor: pointer; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; transition: all 0.18s; }
+  .btn-generate:hover { background: #ff7050; transform: translateY(-1px); }
+  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .output-area { margin-top: 28px; }
+  .output-title { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; text-transform: uppercase; margin-bottom: 16px; }
+  .output-title span { color: var(--accent); }
+  .post-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 14px; overflow: hidden; animation: fadeUp 0.3s ease forwards; opacity: 0; }
+  .post-card:nth-child(1){animation-delay:.05s} .post-card:nth-child(2){animation-delay:.12s} .post-card:nth-child(3){animation-delay:.19s} .post-card:nth-child(4){animation-delay:.26s}
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  .post-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .plat-label { display: flex; align-items: center; gap: 8px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .post-type-tag { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); background: var(--surface2); border-radius: 3px; padding: 3px 8px; }
+  .post-body { padding: 14px 16px; }
+  .post-content { font-size: 14px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; }
+  .post-content .hashtag { color: var(--accent2); }
+  .post-actions { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--border); background: var(--bg); }
+  .btn-copy { padding: 6px 14px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 5px; color: var(--text); font-size: 12px; cursor: pointer; transition: all 0.15s; }
+  .btn-copy:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-copy.copied { border-color: var(--green); color: var(--green); }
+  .char-count { font-size: 11px; color: var(--muted); margin-left: auto; }
+  .loading-bar { width: 100%; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 20px; }
+  .loading-bar-inner { height: 100%; background: var(--accent); animation: loadAnim 1.4s ease-in-out infinite; }
+  @keyframes loadAnim { 0%{width:0%;margin-left:0} 50%{width:60%;margin-left:20%} 100%{width:0%;margin-left:100%} }
+  .loading-text { text-align: center; color: var(--muted); font-size: 13px; padding: 20px; }
+  .error-msg { background: rgba(255,92,53,0.1); border: 1px solid rgba(255,92,53,0.3); border-radius: 8px; padding: 14px 16px; color: var(--accent2); font-size: 14px; margin-top: 16px; }
+  .section-divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+  /* ── GAME TRACKER ── */
+  .tracker-meta { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 560px) { .tracker-meta { grid-template-columns: 1fr 1fr; } }
+
+  .scoreboard { background: var(--surface); border: 1px solid var(--border2); border-radius: 12px; padding: 16px 8px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; text-align: center; }
+  .sc-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+  .sc-val { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 800; line-height: 1; }
+  .sc-val.hi { color: var(--accent); }
+
+  .qtr-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 20px; }
+  .qtr-lbl { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .qtr-btn { padding: 7px 13px; border-radius: 6px; border: 1.5px solid var(--border2); background: var(--surface); color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .qtr-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .big3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .big-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 8px; text-align: center; }
+  .big-name { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+  .big-num { font-family: 'Barlow Condensed', sans-serif; font-size: 52px; font-weight: 800; line-height: 1; color: var(--accent); }
+  .pts-btns { display: flex; gap: 5px; justify-content: center; margin-top: 10px; }
+  .pts-btn { flex: 1; padding: 10px 4px; border-radius: 6px; border: 1.5px solid; background: var(--surface2); font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; cursor: pointer; transition: all 0.12s; }
+  .pts-btn:active { transform: scale(0.9); }
+  .pts-btn.p1 { border-color: var(--green); color: var(--green); }
+  .pts-btn.p1:hover { background: rgba(74,222,128,0.1); }
+  .pts-btn.p2 { border-color: var(--accent); color: var(--accent); }
+  .pts-btn.p2:hover { background: rgba(255,92,53,0.1); }
+  .pts-btn.p3 { border-color: var(--gold); color: var(--gold); }
+  .pts-btn.p3:hover { background: rgba(245,200,66,0.08); }
+  .adj-btns { display: flex; gap: 6px; justify-content: center; margin-top: 10px; }
+  .adj-btn { flex: 1; padding: 10px 4px; border-radius: 6px; border: 1.5px solid; background: var(--surface2); font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; cursor: pointer; transition: all 0.12s; }
+  .adj-btn:active { transform: scale(0.9); }
+  .adj-btn.plus { border-color: var(--accent); color: var(--accent); }
+  .adj-btn.plus:hover { background: rgba(255,92,53,0.1); }
+  .adj-btn.minus { border-color: var(--border2); color: var(--muted); }
+  .adj-btn.minus:hover { border-color: var(--muted); color: var(--text); }
+
+  .mini4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+  @media (max-width: 480px) { .mini4 { grid-template-columns: repeat(2, 1fr); } }
+  .mini-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 6px; text-align: center; }
+  .mini-name { font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+  .mini-num { font-family: 'Barlow Condensed', sans-serif; font-size: 30px; font-weight: 800; line-height: 1; color: var(--text); margin-bottom: 6px; }
+  .mini-btns { display: flex; gap: 4px; justify-content: center; }
+  .mini-btn { flex: 1; padding: 7px 3px; border-radius: 5px; border: 1.5px solid; background: var(--surface2); font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 800; cursor: pointer; transition: all 0.12s; }
+  .mini-btn:active { transform: scale(0.9); }
+  .mini-btn.plus { border-color: var(--accent); color: var(--accent); }
+  .mini-btn.minus { border-color: var(--border2); color: var(--muted); }
+
+  .play-log { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; max-height: 160px; overflow-y: auto; margin-bottom: 20px; }
+  .log-empty { padding: 16px; font-size: 13px; color: var(--muted); text-align: center; }
+  .log-entry { display: flex; align-items: center; padding: 7px 14px; border-bottom: 1px solid var(--border); font-size: 13px; animation: fadeUp 0.15s ease; }
+  .log-entry:last-child { border-bottom: none; }
+  .log-text { flex: 1; color: var(--text); }
+  .log-qtr { color: var(--muted); font-size: 11px; margin: 0 8px; }
+  .undo-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 11px; padding: 2px 6px; border-radius: 3px; }
+  .undo-btn:hover { color: var(--accent); background: var(--surface2); }
+
+  .summary-box { background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px; padding: 16px; margin-bottom: 14px; }
+  .sum-row { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 14px; }
+  .sum-cell { flex: 1; padding: 12px 4px; text-align: center; border-right: 1px solid var(--border); }
+  .sum-cell:last-child { border-right: none; }
+  .sum-val { font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 800; color: var(--accent); line-height: 1; }
+  .sum-lbl { font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+  .statline { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .statline-sub { font-size: 12px; color: var(--muted); }
+
+  .btn-send { width: 100%; padding: 13px; background: var(--surface2); border: 1.5px solid var(--accent); border-radius: 8px; color: var(--accent); font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.18s; margin-bottom: 8px; display: block; }
+  .btn-send:hover { background: var(--accent); color: #fff; }
+  .btn-new { width: 100%; padding: 11px; background: none; border: 1px solid var(--border2); border-radius: 8px; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.15s; }
+  .btn-new:hover { border-color: var(--muted); color: var(--text); }
+
+  /* Calendar */
+  .cal-desc { font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+  .week-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 8px; margin-bottom: 24px; }
+  @media (max-width: 680px) { .week-grid { grid-template-columns: 1fr 1fr; } }
+  .day-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 10px; position: relative; overflow: hidden; }
+  .day-name { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .day-card.game-day { border-color: var(--accent); }
+  .day-card.game-day .day-name { color: var(--accent); }
+  .day-card.game-day::before { content: 'GAME'; position: absolute; top: 8px; right: 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; background: var(--accent); color: #fff; padding: 1px 5px; border-radius: 2px; }
+  .day-post { font-size: 12px; color: var(--text); margin-bottom: 6px; line-height: 1.4; display: flex; align-items: flex-start; gap: 5px; }
+  .dpd { width: 5px; height: 5px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+
+  /* Tips */
+  .tips-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .tips-grid { grid-template-columns: 1fr; } }
+  .tip-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+  .tip-card h3 { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .tip-card h3 span { color: var(--accent); }
+  .tip-list { list-style: none; }
+  .tip-list li { font-size: 13px; color: var(--muted); line-height: 1.5; padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .tip-list li:last-child { border-bottom: none; }
+  .tip-list li strong { color: var(--text); display: block; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="header-row">
+      <div>
+        <div class="logo-mark">Recruit Agent</div>
+        <h1>Carlie's <span>Recruit</span> Studio</h1>
+        <div class="header-sub">AI-powered social media for college recruiting · Class of 2027</div>
+      </div>
+      <div class="profile-chip">
+        <strong>Class of 2027 · Basketball</strong>
+        Twitter/X · Instagram · Hudl
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('generate')">✦ Generate Posts</button>
+    <button class="tab" onclick="switchTab('tracker')">🏀 Game Tracker</button>
+    <button class="tab" onclick="switchTab('calendar')">Calendar</button>
+    <button class="tab" onclick="switchTab('tips')">Recruit Tips</button>
+  </div>
+
+  <!-- GENERATE -->
+  <div class="panel active" id="panel-generate">
+    <div class="form-full">
+      <label>What happened?</label>
+      <textarea id="event-desc" rows="3" placeholder="e.g. Won 68-52 vs rival, I had 24 pts, 7 reb, 4 ast. Hit the game-winner in the 4th."></textarea>
+    </div>
+    <div class="form-grid">
+      <div><label>Opponent / Event</label><input type="text" id="opponent" placeholder="e.g. Lincoln High School"></div>
+      <div><label>Athlete name</label><input type="text" id="athlete-name" placeholder="Carlie" value="Carlie"></div>
+    </div>
+    <div class="form-grid">
+      <div><label>Key stats</label><input type="text" id="stats" placeholder="e.g. 24 pts, 7 reb, 4 ast, 2 blk"></div>
+      <div><label>Media type</label>
+        <select id="media-type">
+          <option value="video clip">Video clip / highlight</option>
+          <option value="photo">Game photo</option>
+          <option value="stat graphic">Stat graphic only</option>
+          <option value="no media">Text only</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-full">
+      <label>Post tone</label>
+      <div class="tone-row">
+        <div class="tone-btn selected" onclick="selectTone(this,'Confident & authentic — real athlete voice, not hype')">Confident + Authentic</div>
+        <div class="tone-btn" onclick="selectTone(this,'Humble & grateful — acknowledges teammates and coaches')">Humble + Grateful</div>
+        <div class="tone-btn" onclick="selectTone(this,'Hype & energetic — high energy game recap')">Hype Energy</div>
+        <div class="tone-btn" onclick="selectTone(this,'Focused & professional — recruiting-forward, clean and concise')">Professional + Clean</div>
+      </div>
+    </div>
+    <div class="form-full">
+      <label>Platforms</label>
+      <div class="platform-row">
+        <label class="plat-btn checked-tw" id="plat-tw"><input type="checkbox" checked onchange="togglePlat('tw',this)"><span class="dot dot-tw"></span> Twitter/X <span style="font-size:10px;opacity:0.7">★ #1</span></label>
+        <label class="plat-btn checked-hudl" id="plat-hudl"><input type="checkbox" checked onchange="togglePlat('hudl',this)"><span class="dot dot-hudl"></span> Hudl/NCSA <span style="font-size:10px;opacity:0.7">★ #2</span></label>
+        <label class="plat-btn checked-ig" id="plat-ig"><input type="checkbox" checked onchange="togglePlat('ig',this)"><span class="dot dot-ig"></span> Instagram <span style="font-size:10px;opacity:0.7">★ #3</span></label>
+        <label class="plat-btn" id="plat-tt"><input type="checkbox" onchange="togglePlat('tt',this)"><span class="dot dot-tt"></span> TikTok <span style="font-size:10px;opacity:0.5">later</span></label>
+      </div>
+    </div>
+    <button class="btn-generate" id="gen-btn" onclick="generatePosts()"><span id="gen-btn-text">⚡ Generate Posts</span></button>
+    <div id="output-area" class="output-area" style="display:none"></div>
+  </div>
+
+  <!-- GAME TRACKER -->
+  <div class="panel" id="panel-tracker">
+    <div class="tracker-meta">
+      <div><label>Opponent</label><input type="text" id="t-opp" placeholder="e.g. Jefferson HS"></div>
+      <div><label>Tournament / Event</label><input type="text" id="t-event" placeholder="e.g. Spring Showcase"></div>
+      <div><label>Result</label>
+        <select id="t-result">
+          <option value="">— set after game —</option>
+          <option value="W">Win ✓</option>
+          <option value="L">Loss</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Live scoreboard -->
+    <div class="scoreboard">
+      <div><div class="sc-label">PTS</div><div class="sc-val hi" id="sb-pts">0</div></div>
+      <div><div class="sc-label">REB</div><div class="sc-val" id="sb-reb">0</div></div>
+      <div><div class="sc-label">AST</div><div class="sc-val" id="sb-ast">0</div></div>
+      <div><div class="sc-label">STL</div><div class="sc-val" id="sb-stl">0</div></div>
+      <div><div class="sc-label">BLK</div><div class="sc-val" id="sb-blk">0</div></div>
+      <div><div class="sc-label">TO</div><div class="sc-val" id="sb-to">0</div></div>
+    </div>
+
+    <!-- Quarter selector -->
+    <div class="qtr-bar">
+      <span class="qtr-lbl">Period:</span>
+      <button class="qtr-btn active" id="qtr-1" onclick="setQtr(1)">Q1</button>
+      <button class="qtr-btn" id="qtr-2" onclick="setQtr(2)">Q2</button>
+      <button class="qtr-btn" id="qtr-3" onclick="setQtr(3)">Q3</button>
+      <button class="qtr-btn" id="qtr-4" onclick="setQtr(4)">Q4</button>
+      <button class="qtr-btn" id="qtr-OT" onclick="setQtr('OT')">OT</button>
+    </div>
+
+    <!-- Big 3 stat cards -->
+    <div class="big3">
+      <div class="big-card">
+        <div class="big-name">Points</div>
+        <div class="big-num" id="d-pts">0</div>
+        <div class="pts-btns">
+          <button class="pts-btn p1" onclick="logStat('pts',1,'+1 FT')">+1</button>
+          <button class="pts-btn p2" onclick="logStat('pts',2,'+2 pts')">+2</button>
+          <button class="pts-btn p3" onclick="logStat('pts',3,'+3 pts')">+3</button>
+        </div>
+      </div>
+      <div class="big-card">
+        <div class="big-name">Rebounds</div>
+        <div class="big-num" id="d-reb">0</div>
+        <div class="adj-btns">
+          <button class="adj-btn plus" onclick="logStat('reb',1,'Rebound')">+1</button>
+          <button class="adj-btn minus" onclick="logStat('reb',-1,'Reb –1')">–1</button>
+        </div>
+      </div>
+      <div class="big-card">
+        <div class="big-name">Assists</div>
+        <div class="big-num" id="d-ast">0</div>
+        <div class="adj-btns">
+          <button class="adj-btn plus" onclick="logStat('ast',1,'Assist')">+1</button>
+          <button class="adj-btn minus" onclick="logStat('ast',-1,'Ast –1')">–1</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secondary stats -->
+    <div class="mini4">
+      <div class="mini-card">
+        <div class="mini-name">Steals</div>
+        <div class="mini-num" id="d-stl">0</div>
+        <div class="mini-btns">
+          <button class="mini-btn plus" onclick="logStat('stl',1,'Steal')">+1</button>
+          <button class="mini-btn minus" onclick="logStat('stl',-1,'Stl –1')">–</button>
+        </div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-name">Blocks</div>
+        <div class="mini-num" id="d-blk">0</div>
+        <div class="mini-btns">
+          <button class="mini-btn plus" onclick="logStat('blk',1,'Block')">+1</button>
+          <button class="mini-btn minus" onclick="logStat('blk',-1,'Blk –1')">–</button>
+        </div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-name">Turnovers</div>
+        <div class="mini-num" id="d-to">0</div>
+        <div class="mini-btns">
+          <button class="mini-btn plus" onclick="logStat('to',1,'Turnover')">+1</button>
+          <button class="mini-btn minus" onclick="logStat('to',-1,'TO –1')">–</button>
+        </div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-name">Fouls</div>
+        <div class="mini-num" id="d-foul">0</div>
+        <div class="mini-btns">
+          <button class="mini-btn plus" onclick="logStat('foul',1,'Foul')">+1</button>
+          <button class="mini-btn minus" onclick="logStat('foul',-1,'Foul –1')">–</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Play log -->
+    <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px;">Play log <span id="log-count" style="color:var(--border2)"></span></div>
+    <div class="play-log" id="play-log"><div class="log-empty">Tap the stat buttons above to start logging…</div></div>
+
+    <!-- Summary -->
+    <div class="summary-box">
+      <div class="sum-row">
+        <div class="sum-cell"><div class="sum-val" id="sum-pts">0</div><div class="sum-lbl">Pts</div></div>
+        <div class="sum-cell"><div class="sum-val" id="sum-reb">0</div><div class="sum-lbl">Reb</div></div>
+        <div class="sum-cell"><div class="sum-val" id="sum-ast">0</div><div class="sum-lbl">Ast</div></div>
+        <div class="sum-cell"><div class="sum-val" id="sum-stl">0</div><div class="sum-lbl">Stl</div></div>
+        <div class="sum-cell"><div class="sum-val" id="sum-blk">0</div><div class="sum-lbl">Blk</div></div>
+        <div class="sum-cell"><div class="sum-val" id="sum-to">0</div><div class="sum-lbl">TO</div></div>
+      </div>
+      <div class="statline" id="statline">0 pts · 0 reb · 0 ast</div>
+      <div class="statline-sub" id="statline-sub">Tap stats above — line auto-populates</div>
+    </div>
+    <button class="btn-send" onclick="sendToGenerator()">→ Send Stats to Post Generator</button>
+    <button class="btn-new" onclick="newGame()">+ New Game</button>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="panel" id="panel-calendar">
+    <p class="cal-desc">Built around her real schedule: <strong style="color:var(--text)">M–F training 6–9pm, tournaments on weekends.</strong> Training every evening means there's always content. Coaches who see daily gym posts build a picture of her work ethic before they ever watch her play.</p>
+
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">Weekday rhythm — training 6–9pm</div>
+    <div class="week-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:10px;">
+      <div class="day-card"><div class="day-name">Mon</div>
+        <div class="day-post"><div class="dpd" style="background:var(--ig)"></div>Story from training tonight (9pm clip)</div>
+        <div class="day-post"><div class="dpd" style="background:var(--tw)"></div>"Week starts now" tweet</div>
+      </div>
+      <div class="day-card"><div class="day-name">Tue</div>
+        <div class="day-post"><div class="dpd" style="background:var(--ig)"></div>Instagram Reel: drill or skill clip from practice</div>
+        <div class="day-post"><div class="dpd" style="background:var(--tw)"></div>Gym check-in tweet or mindset quote</div>
+      </div>
+      <div class="day-card"><div class="day-name">Wed</div>
+        <div class="day-post"><div class="dpd" style="background:var(--ig)"></div>Stat graphic or throwback highlight</div>
+        <div class="day-post"><div class="dpd" style="background:var(--tw)"></div>Academic win or team moment</div>
+      </div>
+      <div class="day-card"><div class="day-name">Thu</div>
+        <div class="day-post"><div class="dpd" style="background:var(--ig)"></div>Instagram Reel: tournament week prep footage</div>
+        <div class="day-post"><div class="dpd" style="background:var(--tw)"></div>Announce weekend tournament — tag the event</div>
+      </div>
+      <div class="day-card"><div class="day-name">Fri</div>
+        <div class="day-post"><div class="dpd" style="background:var(--ig)"></div>Travel / pre-tournament hype story</div>
+        <div class="day-post"><div class="dpd" style="background:var(--tw)"></div>"We ready" tweet #ClassOf2027</div>
+      </div>
+    </div>
+
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;margin-top:20px;">⚡ Tournament weekend</div>
+    <div class="week-grid" style="grid-template-columns:1fr 1fr;margin-bottom:24px;">
+      <div class="day-card game-day"><div class="day-name">Sat — Game days</div>
+        <div class="day-post"><div class="dpd" style="background:var(--ig)"></div><strong>Pre-game:</strong> Story countdown + warm-up clip</div>
+        <div class="day-post"><div class="dpd" style="background:var(--tw)"></div><strong>During:</strong> Score updates (parent tweets from her account)</div>
+        <div class="day-post"><div class="dpd" style="background:var(--ig)"></div><strong>Post-game:</strong> Highlight reel within 2 hrs — most important post of the week</div>
+        <div class="day-post"><div class="dpd" style="background:var(--tw)"></div>Stat line tweet: "X pts X reb X ast. W/L."</div>
+      </div>
+      <div class="day-card game-day"><div class="day-name">Sun — Close out</div>
+        <div class="day-post"><div class="dpd" style="background:var(--ig)"></div>Best game of weekend highlight reel</div>
+        <div class="day-post"><div class="dpd" style="background:var(--tw)"></div>Weekend stat summary + tournament result</div>
+        <div class="day-post"><div class="dpd" style="background:var(--ig)"></div>Instagram Reel: best 3–5 clips of the weekend stitched</div>
+        <div class="day-post"><div class="dpd" style="background:var(--hudl)"></div>Upload clips to Hudl — Sunday night ritual</div>
+      </div>
+    </div>
+
+    <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:14px 16px;margin-bottom:24px;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;color:var(--gold)">⏱ The 9pm habit</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.65">Practice ends at 9pm. Before she gets in the car — one vertical clip of a drill, or a quick "just finished 3 hrs" story. 30 seconds. That's your weekday content done. Coaches who see gym posts at 9pm every week understand her work ethic before they ever watch a game tape.</div>
+    </div>
+
+    <div class="section-divider"></div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;text-transform:uppercase;margin-bottom:16px;">Must-use hashtags <span style="color:var(--accent)">#ClassOf2027</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;">
+      <span style="background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:5px 10px;font-size:12px;color:var(--accent2)">#ClassOf2027</span>
+      <span style="background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:5px 10px;font-size:12px;color:var(--accent2)">#2027Recruit</span>
+      <span style="background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:5px 10px;font-size:12px;color:var(--accent2)">#WBBRecruit</span>
+      <span style="background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:5px 10px;font-size:12px;color:var(--accent2)">#WBBALL</span>
+      <span style="background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:5px 10px;font-size:12px;color:var(--accent2)">#HoopRecruits</span>
+      <span style="background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:5px 10px;font-size:12px;color:var(--accent2)">#PrepBball</span>
+      <span style="background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:5px 10px;font-size:12px;color:var(--accent2)">#BallerAlert</span>
+      <span style="background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:5px 10px;font-size:12px;color:var(--accent2)">#SeniorSzn</span>
+      <span style="background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:5px 10px;font-size:12px;color:var(--accent2)">#GirlsBball</span>
+      <span style="background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:5px 10px;font-size:12px;color:var(--accent2)">#PrepBaller</span>
+      <span style="background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:5px 10px;font-size:12px;color:var(--accent2)">#HoopDreams</span>
+      <span style="background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:5px 10px;font-size:12px;color:var(--accent2)">#EarnedNotGiven</span>
+    </div>
+  </div>
+
+  <!-- TIPS -->
+  <div class="panel" id="panel-tips">
+    <div class="tips-grid">
+      <div class="tip-card"><h3>Instagram <span>strategy</span></h3>
+        <ul class="tip-list">
+          <li><strong>Reels over photos</strong>Reels get 3–5× the reach. A 15-second drill clip beats any photo.</li>
+          <li><strong>Bio = recruiting resume</strong>"PG | 6'0" | 19 PPG | #ClassOf2027" — coaches scan bios in 3 seconds.</li>
+          <li><strong>Hashtags in first comment</strong>Put 8–12 tags in the first comment, not the caption. Cleaner look.</li>
+          <li><strong>Tag school + AAU team</strong>Multiplies reach to coaches already following those accounts.</li>
+        </ul>
+      </div>
+      <div class="tip-card" style="border-color:rgba(245,200,66,0.3);background:rgba(245,200,66,0.04)"><h3>Platform <span>focus</span></h3>
+        <ul class="tip-list">
+          <li><strong>Twitter/X first — coaches live here</strong>Most D1/D2 coaches search prospects on Twitter. Stat tweets, tournament results, visit announcements — this moves the needle most directly.</li>
+          <li><strong>Hudl second — it's her resume</strong>Every coach she contacts clicks Hudl before responding. Current film and bio is non-negotiable.</li>
+          <li><strong>Instagram third — brand + character</strong>Coaches check Instagram to understand who she is as a person, not just a player. Reels, stories, how she talks about teammates.</li>
+          <li><strong>TikTok — revisit later</strong>High effort, lowest recruiting ROI right now. Once the core 3 are running consistently, add it if she wants broader reach.</li>
+        </ul>
+      </div>
+      <div class="tip-card"><h3>Twitter/X <span>strategy</span></h3>
+        <ul class="tip-list">
+          <li><strong>This is where coaches live</strong>Most D1/D2 coaches are very active here. Highest priority platform.</li>
+          <li><strong>Retweet school athletics</strong>Keeps you in coaches' feeds on non-game days.</li>
+          <li><strong>Follow target school coaches</strong>Many check who follows them — it signals real interest.</li>
+          <li><strong>Announce visits publicly</strong>"Excited to visit [school] this weekend" gets coach engagement.</li>
+        </ul>
+      </div>
+      <div class="tip-card"><h3>Hudl / NCSA <span>strategy</span></h3>
+        <ul class="tip-list">
+          <li><strong>Update reel monthly</strong>Coaches want recent form — not highlights from last year.</li>
+          <li><strong>First 90 seconds decide everything</strong>Best play goes at 0:00. Coaches often stop at 1:30.</li>
+          <li><strong>Add full game film</strong>Coaches want to see full possessions, decisions, off-ball movement.</li>
+          <li><strong>NCSA = digital recruiting resume</strong>GPA, stats, video, test scores — keep it current at all times.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="section-divider"></div>
+    <div class="tip-card" style="background:rgba(255,92,53,0.06);border-color:rgba(255,92,53,0.25)">
+      <h3>The <span>big picture</span></h3>
+      <ul class="tip-list" style="display:grid;grid-template-columns:1fr 1fr;gap:0 20px">
+        <li><strong>Consistency over virality</strong>3× a week for 12 months beats going viral once. Coaches track patterns.</li>
+        <li><strong>Academic posts matter</strong>Honor roll, AP classes — coaches love student-athlete content.</li>
+        <li><strong>Character shows through content</strong>How she credits teammates and handles losses matters to coaches.</li>
+        <li><strong>DM coaches directly</strong>A short genuine DM linking her Hudl is completely normal and welcomed.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+<script>
+let selectedTone = 'Confident & authentic — real athlete voice, not hype';
+const activePlatforms = { ig: true, tt: false, tw: true, hudl: true };
+let gameStats = { pts:0, reb:0, ast:0, stl:0, blk:0, to:0, foul:0 };
+let playLog = [];
+let currentQtr = 1;
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+  document.getElementById(`panel-${tab}`).classList.add('active');
+}
+function selectTone(el, tone) {
+  document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected'); selectedTone = tone;
+}
+function togglePlat(plat, cb) {
+  activePlatforms[plat] = cb.checked;
+  document.getElementById(`plat-${plat}`).className = cb.checked ? `plat-btn checked-${plat}` : 'plat-btn';
+}
+function highlightHashtags(t) { return t.replace(/(#\w+)/g, '<span class="hashtag">$1</span>'); }
+
+// TRACKER
+function setQtr(q) {
+  currentQtr = q;
+  document.querySelectorAll('.qtr-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`qtr-${q}`).classList.add('active');
+}
+
+function logStat(stat, delta, label) {
+  const newVal = Math.max(0, gameStats[stat] + delta);
+  const actual = newVal - gameStats[stat];
+  if (actual === 0) return;
+  gameStats[stat] = newVal;
+  playLog.unshift({ stat, delta: actual, label, qtr: currentQtr, id: Date.now() });
+  if (playLog.length > 40) playLog.pop();
+  updateTracker();
+}
+
+function updateTracker() {
+  const s = gameStats;
+  const keys = ['pts','reb','ast','stl','blk','to'];
+  keys.forEach(k => {
+    document.getElementById(`sb-${k}`).textContent = s[k];
+    document.getElementById(`sum-${k}`).textContent = s[k];
+  });
+  document.getElementById('d-pts').textContent = s.pts;
+  document.getElementById('d-reb').textContent = s.reb;
+  document.getElementById('d-ast').textContent = s.ast;
+  document.getElementById('d-stl').textContent = s.stl;
+  document.getElementById('d-blk').textContent = s.blk;
+  document.getElementById('d-to').textContent = s.to;
+  document.getElementById('d-foul').textContent = s.foul;
+
+  const parts = [];
+  if (s.pts) parts.push(`${s.pts} pts`);
+  if (s.reb) parts.push(`${s.reb} reb`);
+  if (s.ast) parts.push(`${s.ast} ast`);
+  if (s.stl) parts.push(`${s.stl} stl`);
+  if (s.blk) parts.push(`${s.blk} blk`);
+  if (s.to) parts.push(`${s.to} TO`);
+  document.getElementById('statline').textContent = parts.length ? parts.join(' · ') : '0 pts · 0 reb · 0 ast';
+  document.getElementById('statline-sub').textContent = parts.length ? 'Ready — hit "Send to Post Generator" below ↓' : 'Tap stats above — line auto-populates';
+
+  // play log
+  const logEl = document.getElementById('play-log');
+  if (!playLog.length) { logEl.innerHTML = '<div class="log-empty">Tap the stat buttons above to start logging…</div>'; return; }
+  document.getElementById('log-count').textContent = `(${playLog.length})`;
+  logEl.innerHTML = playLog.map(e => `<div class="log-entry"><span class="log-text">${e.label}</span><span class="log-qtr">Q${e.qtr}</span><button class="undo-btn" onclick="undoEntry(${e.id})">undo</button></div>`).join('');
+}
+
+function undoEntry(id) {
+  const idx = playLog.findIndex(e => e.id === id);
+  if (idx === -1) return;
+  const e = playLog[idx];
+  gameStats[e.stat] = Math.max(0, gameStats[e.stat] - e.delta);
+  playLog.splice(idx, 1);
+  updateTracker();
+}
+
+function sendToGenerator() {
+  const s = gameStats;
+  const opp = document.getElementById('t-opp').value.trim();
+  const evt = document.getElementById('t-event').value.trim();
+  const res = document.getElementById('t-result').value;
+  const parts = [];
+  if (s.pts) parts.push(`${s.pts} pts`);
+  if (s.reb) parts.push(`${s.reb} reb`);
+  if (s.ast) parts.push(`${s.ast} ast`);
+  if (s.stl) parts.push(`${s.stl} stl`);
+  if (s.blk) parts.push(`${s.blk} blk`);
+  if (s.to) parts.push(`${s.to} TO`);
+  const statLine = parts.join(', ');
+  const descParts = [
+    res === 'W' ? 'Won the game' : res === 'L' ? 'Lost the game' : '',
+    opp ? `vs ${opp}` : '',
+    evt ? `at ${evt}` : '',
+    statLine ? `Final stats: ${statLine}` : ''
+  ].filter(Boolean);
+  document.getElementById('event-desc').value = descParts.join('. ');
+  document.getElementById('stats').value = statLine;
+  if (opp) document.getElementById('opponent').value = opp;
+  switchTab('generate');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function newGame() {
+  if (playLog.length && !confirm('Start a new game? Current stats will be cleared.')) return;
+  gameStats = { pts:0, reb:0, ast:0, stl:0, blk:0, to:0, foul:0 };
+  playLog = [];
+  ['t-opp','t-event'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('t-result').value = '';
+  document.getElementById('log-count').textContent = '';
+  setQtr(1);
+  updateTracker();
+}
+
+// POST GENERATOR
+async function generatePosts() {
+  const desc = document.getElementById('event-desc').value.trim();
+  if (!desc) { showOutput('<div class="error-msg">Please describe what happened.</div>'); return; }
+  const platforms = Object.keys(activePlatforms).filter(p => activePlatforms[p]);
+  if (!platforms.length) { showOutput('<div class="error-msg">Select at least one platform.</div>'); return; }
+
+  const name = document.getElementById('athlete-name').value.trim() || 'Carlie';
+  const opponent = document.getElementById('opponent').value.trim();
+  const stats = document.getElementById('stats').value.trim();
+  const media = document.getElementById('media-type').value;
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  document.getElementById('gen-btn-text').textContent = 'Generating…';
+  showOutput(`<div class="loading-bar"><div class="loading-bar-inner"></div></div><div class="loading-text">Writing posts for ${platforms.length} platform${platforms.length>1?'s':''}…</div>`);
+
+  const platInstructions = {
+    ig: `Instagram caption (150-220 chars, 5 recruiting hashtags, pair with ${media}, line breaks for readability)`,
+    tt: `TikTok caption (80-130 chars, 3-5 hashtags, matches a ${media} with 2-second hook, include overlay text tip)`,
+    tw: `Twitter/X tweet (max 260 chars, 2-3 hashtags including #ClassOf2027, stats front-loaded)`,
+    hudl: `Hudl/NCSA profile update (100-160 chars, professional, 3rd-person ok, factual and impressive)`
+  };
+  const platNames = { ig:'INSTAGRAM', tt:'TIKTOK', tw:'TWITTER', hudl:'HUDL' };
+
+  const prompt = `You are a social media content agent for a high school girls basketball player recruiting for college.
+
+ATHLETE: ${name}, Class of 2027, basketball
+EVENT: ${desc}${opponent ? `\nOPPONENT: ${opponent}` : ''}${stats ? `\nSTATS: ${stats}` : ''}
+MEDIA: ${media}
+TONE: ${selectedTone}
+
+Write recruiting-optimized posts. Authentic athlete voice, not corporate. Always include #ClassOf2027 and #WBBRecruit.
+
+${platforms.map(p => `=== ${platNames[p]} ===\n${platInstructions[p]}`).join('\n\n')}
+
+Format exactly like this (no preamble, no explanations):
+[INSTAGRAM]
+(content)
+
+[TIKTOK]
+(content)
+
+[TWITTER]
+(content)
+
+[HUDL]
+(content)
+
+Only include platforms listed above.`;
+
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await r.json();
+    const raw = data.content?.map(b => b.text||'').join('') || '';
+    const sections = {};
+    for (const [key, plat] of Object.entries({ INSTAGRAM:'ig', TIKTOK:'tt', TWITTER:'tw', HUDL:'hudl' })) {
+      const m = raw.match(new RegExp(`\\[${key}\\]([\\s\\S]*?)(?=\\[(?:INSTAGRAM|TIKTOK|TWITTER|HUDL)\\]|$)`, 'i'));
+      if (m) sections[plat] = m[1].trim();
+    }
+    const pd = { ig:{label:'Instagram',color:'var(--ig)',type:'Caption'}, tt:{label:'TikTok',color:'var(--tt)',type:'Caption + tip'}, tw:{label:'Twitter / X',color:'var(--tw)',type:'Tweet'}, hudl:{label:'Hudl / NCSA',color:'var(--hudl)',type:'Profile update'} };
+    let html = `<div class="output-title">Generated posts <span>ready to use</span></div>`;
+    for (const plat of platforms) {
+      const content = sections[plat] || '(No content generated)';
+      const d = pd[plat];
+      html += `<div class="post-card"><div class="post-header"><div class="plat-label" style="color:${d.color}"><span class="dot" style="background:${d.color}"></span>${d.label}</div><span class="post-type-tag">${d.type}</span></div><div class="post-body"><div class="post-content" id="content-${plat}">${highlightHashtags(content)}</div></div><div class="post-actions"><button class="btn-copy" onclick="copyPost('${plat}')">Copy</button><span class="char-count">${content.length} chars</span></div></div>`;
+    }
+    showOutput(html);
+  } catch(err) {
+    showOutput(`<div class="error-msg">Something went wrong. Try again.<br><small style="opacity:0.6">${err.message}</small></div>`);
+  }
+  btn.disabled = false;
+  document.getElementById('gen-btn-text').textContent = '⚡ Generate Posts';
+}
+
+function showOutput(html) {
+  const el = document.getElementById('output-area');
+  el.style.display = 'block'; el.innerHTML = html;
+}
+function copyPost(plat) {
+  const el = document.getElementById(`content-${plat}`);
+  navigator.clipboard.writeText(el.innerText).then(() => {
+    const btn = el.closest('.post-card').querySelector('.btn-copy');
+    btn.textContent = 'Copied!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+</body>
+</html>
